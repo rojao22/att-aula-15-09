@@ -3,36 +3,68 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Rafa</title>
+  <title>Rójão</title>
   
   <!-- SDK oficial do Supabase via CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
+    :root {
+      --avai-azul: #0042a5;
+      --avai-azul-claro: #1d6fd8;
+      --avai-azul-escuro: #00296b;
+      --texto: #1f2937;
+      --borda: #1f2937;
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-    body { background-color: #f4f4f9; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-    h1 { margin-bottom: 16px; color: #333; }
+    
+    body { 
+      /* Fundo com listras verticais inspiradas no Avaí F.C. (Azul e Branco) */
+      background-color: #f0f4fc;
+      background-image: repeating-linear-gradient(
+        90deg,
+        #f0f4fc,
+        #f0f4fc 40px,
+        #e1ebfc 40px,
+        #e1ebfc 80px
+      );
+      color: var(--texto);
+      padding: 20px; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      min-height: 100vh;
+    }
+
+    h1 { 
+      margin-bottom: 0; 
+      color: var(--avai-azul-escuro); 
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
     
     /* Container para os botões do topo */
     .acoes-topo {
       display: flex;
       gap: 10px;
-      margin-bottom: 20px;
     }
 
     .btn-acao {
       border: none;
-      padding: 10px 18px;
+      padding: 10px 16px;
       border-radius: 8px;
       font-size: 1rem;
       font-weight: bold;
       cursor: pointer;
       color: white;
+      transition: opacity 0.2s ease;
     }
     .btn-acao:active { transform: scale(0.98); }
+    .btn-acao:hover { opacity: 0.9; }
 
-    .btn-novo-post { background: #2563eb; box-shadow: 2px 2px 0px #1e40af; }
-    .btn-pesquisar { background: #8b5cf6; box-shadow: 2px 2px 0px #6d28d9; }
+    .btn-novo-post { background: var(--avai-azul); box-shadow: 2px 2px 0px var(--avai-azul-escuro); }
+    .btn-pesquisar { background: #ffffff; color: var(--avai-azul); border: 2px solid var(--avai-azul); box-shadow: 2px 2px 0px var(--avai-azul-escuro); }
 
     /* Containers dinâmicos */
     #form-container, #search-container {
@@ -43,22 +75,28 @@
 
     /* Estilo genérico dos cards de formulários */
     .form-card {
-      background: white;
-      border: 2px solid #222;
+      background: #ffffff;
+      border: 2px solid var(--borda);
       border-radius: 16px;
       padding: 16px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      box-shadow: 4px 4px 0px #222;
+      gap: 12px;
+      box-shadow: 4px 4px 0px rgba(0, 42, 107, 0.15);
     }
 
     .form-card input, .form-card textarea {
       width: 100%;
-      padding: 8px 12px;
-      border: 2px solid #222;
+      padding: 10px 12px;
+      border: 2px solid #d1d5db;
       border-radius: 8px;
       font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-card input:focus, .form-card textarea:focus {
+      border-color: var(--avai-azul);
     }
 
     .form-card textarea { resize: vertical; min-height: 70px; }
@@ -70,18 +108,19 @@
     }
 
     .btn-cancelar {
-      background: #e5e7eb;
-      border: 2px solid #222;
+      background: #f3f4f6;
+      border: 2px solid #d1d5db;
       padding: 8px 14px;
       border-radius: 8px;
       cursor: pointer;
       font-weight: bold;
+      color: #4b5563;
     }
 
     .btn-enviar {
-      background: #10b981;
+      background: var(--avai-azul);
       color: white;
-      border: 2px solid #222;
+      border: 2px solid var(--avai-azul-escuro);
       padding: 8px 14px;
       border-radius: 8px;
       cursor: pointer;
@@ -90,9 +129,9 @@
 
     /* Feedback do Filtro Ativo */
     .filtro-ativo {
-      background: #e0e7ff;
-      border: 2px solid #4338ca;
-      padding: 8px 12px;
+      background: #ffffff;
+      border: 2px solid var(--avai-azul);
+      padding: 10px 14px;
       border-radius: 8px;
       margin-bottom: 16px;
       display: flex;
@@ -101,58 +140,59 @@
       width: 100%;
       max-width: 450px;
       font-weight: bold;
-      color: #3730a3;
+      color: var(--avai-azul-escuro);
+      box-shadow: 2px 2px 0px rgba(0, 42, 107, 0.1);
     }
 
     .btn-limpar-filtro {
       background: transparent;
       border: none;
-      color: #ef4444;
+      color: #dc2626;
       font-weight: bold;
       cursor: pointer;
     }
 
     #feed { 
-        display: flex; 
-        /* flex-direction: column;  */
-        flex-direction: row;
-        align-items: center; 
-        justify-content: center;
-        flex-wrap: wrap;
-        gap: 20px; 
-        width: 100%; 
-        /* max-width: 450px;  */
+      display: flex; 
+      flex-direction: row; 
+      align-items: center; 
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 20px; 
+      width: 100%; 
     }
     
     /* Card da Postagem */
     .card {
-        background: white;
-        border: 2px solid #222;
-        border-radius: 16px;
-        padding: 16px;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        box-shadow: 4px 4px 0px #222;
-        max-width: 450px; 
+      background: white;
+      border: 2px solid var(--borda);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 4px 4px 0px rgba(0, 42, 107, 0.2);
+      width: 100%;
+      max-width: 450px; 
     }
 
     .box {
-      border: 2px solid #222;
+      border: 2px solid #e5e7eb;
       border-radius: 12px;
       padding: 12px;
       text-align: center;
     }
 
-    .emoji-box { font-size: 2.5rem; background: #fff; }
-    .texto-box { font-size: 1.1rem; color: #222; text-align: left; }
-    .hashtags-box { color: #2563eb; font-size: 0.9rem; font-weight: bold; }
+    .emoji-box { font-size: 2.5rem; background: #fafafa; border-color: #f0f0f0; }
+    .texto-box { font-size: 1.05rem; color: var(--texto); text-align: left; border-color: #f0f0f0; }
+    .hashtags-box { color: var(--avai-azul); font-size: 0.9rem; font-weight: bold; border-color: #f0f0f0; background: #f8fbff; }
 
     .likes-box {
       display: flex;
       justify-content: space-between;
       align-items: center;
       font-weight: bold;
+      border-color: #f0f0f0;
     }
 
     /* Estilo do emoji de coração clicável */
@@ -162,27 +202,18 @@
       transition: transform 0.1s ease;
     }
 
-    .coracao-interativo.clicavel {
-      cursor: pointer;
-    }
-
-    .coracao-interativo.clicavel:hover {
-      transform: scale(1.2);
-    }
-
-    .coracao-interativo.clicavel:active {
-      transform: scale(0.9);
-    }
-
-    .coracao-interativo.ja-curtido {
-      cursor: default;
-    }
+    .coracao-interativo.clicavel { cursor: pointer; }
+    .coracao-interativo.clicavel:hover { transform: scale(1.2); }
+    .coracao-interativo.clicavel:active { transform: scale(0.9); }
+    .coracao-interativo.ja-curtido { cursor: default; }
 
     .comentarios-box {
       text-align: left;
       display: flex;
       flex-direction: column;
       gap: 8px;
+      border-color: #f0f0f0;
+      background: #fafafa;
     }
 
     .lista-comentarios {
@@ -190,53 +221,60 @@
       display: flex;
       flex-direction: column;
       gap: 6px;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
     }
 
     .lista-comentarios li {
-      background: #f1f2f6;
+      background: #ffffff;
       padding: 6px 10px;
       border-radius: 6px;
+      border: 1px solid #e5e7eb;
       font-size: 0.85rem;
     }
 
     .form-comentario { display: flex; gap: 6px; }
     .form-comentario input {
       flex: 1;
-      padding: 6px;
-      border: 1px solid #ccc;
+      padding: 6px 10px;
+      border: 1px solid #d1d5db;
       border-radius: 6px;
+      font-size: 0.9rem;
+      outline: none;
+    }
+    .form-comentario input:focus {
+      border-color: var(--avai-azul);
     }
     .form-comentario button {
-      padding: 6px 12px;
+      padding: 6px 14px;
       border: none;
-      background: #222;
+      background: var(--avai-azul);
       color: white;
       border-radius: 6px;
       cursor: pointer;
+      font-weight: bold;
     }
-    header{
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 20px;
-        flex-wrap: wrap;
+    
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      width: 100%;
+      max-width: 450px;
+      margin-bottom: 24px;
     }
-
   </style>
 </head>
 <body>
     <header>
-        <h1>MuralDoRafa</h1>
-        
+        <h1>Mural Rójão</h1>
         <div class="acoes-topo">
             <button class="btn-acao btn-novo-post" onclick="toggleFormulario()">+</button>
             <button class="btn-acao btn-pesquisar" onclick="togglePesquisa()">🔍</button>
         </div>
-
     </header>
 
-  
   <div id="form-container"></div>
   <div id="search-container"></div>
   <div id="filtro-container"></div>
@@ -244,8 +282,8 @@
   <div id="feed">Carregando postagens...</div>
 
   <script>
-    const SUPABASE_URL = "https://yrmyiezgvhyfultmyvhm.supabase.co"; 
-    const SUPABASE_KEY = "sb_publishable_J5L4SETBv8hkZy7vaaUrtg_MGjvJgCB";
+    const SUPABASE_URL = "https://kwontegbdoypbbekavrk.supabase.co"; 
+    const SUPABASE_KEY = "sb_publishable_ydaDYP5yYkF3ViCbVBbxsw_CSoqwvNq";
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     const feedEl = document.getElementById("feed");
@@ -304,7 +342,7 @@
           <input type="text" id="input-busca-hashtag" placeholder="Digite a hashtag (ex: #dev ou dev)" required />
           <div class="form-acoes">
             <button type="button" class="btn-cancelar" onclick="togglePesquisa()">Cancelar</button>
-            <button type="submit" class="btn-enviar" style="background:#8b5cf6;">Buscar</button>
+            <button type="submit" class="btn-enviar" style="background:#0042a5;">Buscar</button>
           </div>
         </form>
       `;
