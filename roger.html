@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rójão</title>
+  
+  <!-- SDK oficial do Supabase via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --avai-azul: #0042a5;
+      --avai-azul-claro: #1d6fd8;
+      --avai-azul-escuro: #00296b;
+      --texto: #1f2937;
+      --borda: #1f2937;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    
+    body { 
+      /* Fundo com listras verticais inspiradas no Avaí F.C. (Azul e Branco) */
+      background-color: #f0f4fc;
+      background-image: repeating-linear-gradient(
+        90deg,
+        #f0f4fc,
+        #f0f4fc 40px,
+        #e1ebfc 40px,
+        #e1ebfc 80px
+      );
+      color: var(--texto);
+      padding: 20px; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      min-height: 100vh;
+    }
+
+    h1 { 
+      margin-bottom: 0; 
+      color: var(--avai-azul-escuro); 
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+    
+    /* Container para os botões do topo */
+    .acoes-topo {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-acao {
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      color: white;
+      transition: opacity 0.2s ease;
+    }
+    .btn-acao:active { transform: scale(0.98); }
+    .btn-acao:hover { opacity: 0.9; }
+
+    .btn-novo-post { background: var(--avai-azul); box-shadow: 2px 2px 0px var(--avai-azul-escuro); }
+    .btn-pesquisar { background: #ffffff; color: var(--avai-azul); border: 2px solid var(--avai-azul); box-shadow: 2px 2px 0px var(--avai-azul-escuro); }
+
+    /* Containers dinâmicos */
+    #form-container, #search-container {
+      width: 100%;
+      max-width: 450px;
+      margin-bottom: 20px;
+    }
+
+    /* Estilo genérico dos cards de formulários */
+    .form-card {
+      background: #ffffff;
+      border: 2px solid var(--borda);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 4px 4px 0px rgba(0, 42, 107, 0.15);
+    }
+
+    .form-card input, .form-card textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 2px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-card input:focus, .form-card textarea:focus {
+      border-color: var(--avai-azul);
+    }
+
+    .form-card textarea { resize: vertical; min-height: 70px; }
+
+    .form-acoes {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    .btn-cancelar {
+      background: #f3f4f6;
+      border: 2px solid #d1d5db;
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      color: #4b5563;
+    }
+
+    .btn-enviar {
+      background: var(--avai-azul);
+      color: white;
+      border: 2px solid var(--avai-azul-escuro);
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    /* Feedback do Filtro Ativo */
+    .filtro-ativo {
+      background: #ffffff;
+      border: 2px solid var(--avai-azul);
+      padding: 10px 14px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      max-width: 450px;
+      font-weight: bold;
+      color: var(--avai-azul-escuro);
+      box-shadow: 2px 2px 0px rgba(0, 42, 107, 0.1);
+    }
+
+    .btn-limpar-filtro {
+      background: transparent;
+      border: none;
+      color: #dc2626;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #feed { 
+      display: flex; 
+      flex-direction: row; 
+      align-items: center; 
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 20px; 
+      width: 100%; 
+    }
+    
+    /* Card da Postagem */
+    .card {
+      background: white;
+      border: 2px solid var(--borda);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 4px 4px 0px rgba(0, 42, 107, 0.2);
+      width: 100%;
+      max-width: 450px; 
+    }
+
+    .box {
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .emoji-box { font-size: 2.5rem; background: #fafafa; border-color: #f0f0f0; }
+    .texto-box { font-size: 1.05rem; color: var(--texto); text-align: left; border-color: #f0f0f0; }
+    .hashtags-box { color: var(--avai-azul); font-size: 0.9rem; font-weight: bold; border-color: #f0f0f0; background: #f8fbff; }
+
+    .likes-box {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: bold;
+      border-color: #f0f0f0;
+    }
+
+    /* Estilo do emoji de coração clicável */
+    .coracao-interativo {
+      font-size: 1.4rem;
+      user-select: none;
+      transition: transform 0.1s ease;
+    }
+
+    .coracao-interativo.clicavel { cursor: pointer; }
+    .coracao-interativo.clicavel:hover { transform: scale(1.2); }
+    .coracao-interativo.clicavel:active { transform: scale(0.9); }
+    .coracao-interativo.ja-curtido { cursor: default; }
+
+    .comentarios-box {
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      border-color: #f0f0f0;
+      background: #fafafa;
+    }
+
+    .lista-comentarios {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .lista-comentarios li {
+      background: #ffffff;
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid #e5e7eb;
+      font-size: 0.85rem;
+    }
+
+    .form-comentario { display: flex; gap: 6px; }
+    .form-comentario input {
+      flex: 1;
+      padding: 6px 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      outline: none;
+    }
+    .form-comentario input:focus {
+      border-color: var(--avai-azul);
+    }
+    .form-comentario button {
+      padding: 6px 14px;
+      border: none;
+      background: var(--avai-azul);
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      width: 100%;
+      max-width: 450px;
+      margin-bottom: 24px;
+    }
+  </style>
+</head>
+<body>
+    <header>
+        <h1>Mural Rójão</h1>
+        <div class="acoes-topo">
+            <button class="btn-acao btn-novo-post" onclick="toggleFormulario()">+</button>
+            <button class="btn-acao btn-pesquisar" onclick="togglePesquisa()">🔍</button>
+        </div>
+    </header>
+
+  <div id="form-container"></div>
+  <div id="search-container"></div>
+  <div id="filtro-container"></div>
+
+  <div id="feed">Carregando postagens...</div>
+
+  <script>
+    const SUPABASE_URL = "https://kwontegbdoypbbekavrk.supabase.co"; 
+    const SUPABASE_KEY = "sb_publishable_ydaDYP5yYkF3ViCbVBbxsw_CSoqwvNq";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const feedEl = document.getElementById("feed");
+    const formContainerEl = document.getElementById("form-container");
+    const searchContainerEl = document.getElementById("search-container");
+    const filtroContainerEl = document.getElementById("filtro-container");
+
+    let hashtagAtual = null;
+
+    // Controladores do LocalStorage
+    function getCurtidasLocais() {
+      const curtidas = localStorage.getItem("curtidas_mural");
+      return curtidas ? JSON.parse(curtidas) : [];
+    }
+
+    function salvarCurtidaLocal(id) {
+      const curtidas = getCurtidasLocais();
+      if (!curtidas.includes(id)) {
+        curtidas.push(id);
+        localStorage.setItem("curtidas_mural", JSON.stringify(curtidas));
+      }
+    }
+
+    // Alterna formulário de criação
+    function toggleFormulario() {
+      searchContainerEl.innerHTML = "";
+      if (formContainerEl.innerHTML !== "") {
+        formContainerEl.innerHTML = "";
+        return;
+      }
+
+      formContainerEl.innerHTML = `
+        <form class="form-card" onsubmit="criarPostagem(event)">
+          <input type="text" id="input-emoji" placeholder="Emoji (ex: 😍, 🚀, 🤡)" maxlength="50" required />
+          <textarea id="input-texto" placeholder="O que você está pensando?" required></textarea>
+          <input type="text" id="input-hashtags" placeholder="Hashtags separadas por espaço (ex: #dev #supabase)" />
+          
+          <div class="form-acoes">
+            <button type="button" class="btn-cancelar" onclick="toggleFormulario()">Cancelar</button>
+            <button type="submit" class="btn-enviar">Publicar</button>
+          </div>
+        </form>
+      `;
+    }
+
+    // Alterna formulário de pesquisa
+    function togglePesquisa() {
+      formContainerEl.innerHTML = "";
+      if (searchContainerEl.innerHTML !== "") {
+        searchContainerEl.innerHTML = "";
+        return;
+      }
+
+      searchContainerEl.innerHTML = `
+        <form class="form-card" onsubmit="executarPesquisa(event)">
+          <input type="text" id="input-busca-hashtag" placeholder="Digite a hashtag (ex: #dev ou dev)" required />
+          <div class="form-acoes">
+            <button type="button" class="btn-cancelar" onclick="togglePesquisa()">Cancelar</button>
+            <button type="submit" class="btn-enviar" style="background:#0042a5;">Buscar</button>
+          </div>
+        </form>
+      `;
+    }
+
+    // Executa o filtro de busca
+    function executarPesquisa(event) {
+      event.preventDefault();
+      let term = document.getElementById("input-busca-hashtag").value.trim();
+      
+      if (!term.startsWith('#')) {
+        term = '#' + term;
+      }
+
+      hashtagAtual = term;
+      searchContainerEl.innerHTML = "";
+      carregarPostagens();
+    }
+
+    // Limpa a busca e volta ao feed completo
+    function limparFiltro() {
+      hashtagAtual = null;
+      filtroContainerEl.innerHTML = "";
+      carregarPostagens();
+    }
+
+    // Envia o novo post
+    async function criarPostagem(event) {
+      event.preventDefault();
+
+      const emoji = document.getElementById("input-emoji").value.trim();
+      const texto = document.getElementById("input-texto").value.trim();
+      const hashtagsRaw = document.getElementById("input-hashtags").value.trim();
+      
+      const hashtags = hashtagsRaw
+        ? hashtagsRaw.split(" ")
+            .filter(h => h.length > 0)
+            .map(h => h.startsWith('#') ? h : '#' + h)
+        : [];
+
+      const { error } = await supabaseClient
+        .from("postagens")
+        .insert([{ emoji, texto, hashtags }]);
+
+      if (error) {
+        alert("Erro ao criar postagem!");
+        console.error(error);
+        return;
+      }
+
+      formContainerEl.innerHTML = "";
+      carregarPostagens();
+    }
+
+    // Carrega postagens
+    async function carregarPostagens() {
+      let query = supabaseClient
+        .from("postagens")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (hashtagAtual) {
+        query = query.contains("hashtags", [hashtagAtual]);
+        
+        filtroContainerEl.innerHTML = `
+          <div class="filtro-ativo">
+            <span>Filtrando por: ${hashtagAtual}</span>
+            <button class="btn-limpar-filtro" onclick="limparFiltro()">Limpar ✖</button>
+          </div>
+        `;
+      } else {
+        filtroContainerEl.innerHTML = "";
+      }
+
+      const { data: postagens, error } = await query;
+
+      if (error) {
+        feedEl.innerHTML = "<p>Erro ao carregar postagens.</p>";
+        console.error(error);
+        return;
+      }
+
+      if (postagens.length === 0) {
+        feedEl.innerHTML = "<p>Nenhuma postagem encontrada com esses critérios.</p>";
+        return;
+      }
+
+      const curtidasLocais = getCurtidasLocais();
+
+      feedEl.innerHTML = "";
+      postagens.forEach(post => {
+        const card = document.createElement("div");
+        card.className = "card";
+
+        const hashtagsTexto = post.hashtags ? post.hashtags.join(" ") : "";
+        const listaComentariosHTML = (post.comentarios || [])
+          .map(c => `<li>${c}</li>`)
+          .join("");
+
+        const jaCurtido = curtidasLocais.includes(post.id);
+        const emojiCoracao = jaCurtido ? '❤️' : '🩶';
+        const classeCoracao = jaCurtido ? 'ja-curtido' : 'clicavel';
+        const acaoClique = jaCurtido ? '' : `onclick="curtirPost(${post.id}, ${post.likes || 0})"`;
+
+        card.innerHTML = `
+          <div class="box emoji-box">${post.emoji || '❤️'}</div>
+          <div class="box texto-box">${post.texto}</div>
+          <div class="box hashtags-box">${hashtagsTexto}</div>
+          
+          <div class="box likes-box">
+            <span>
+              <span class="coracao-interativo ${classeCoracao}" ${acaoClique}>
+                ${emojiCoracao}
+              </span>
+              ${post.likes || 0} 
+            </span>
+          </div>
+
+          <div class="box comentarios-box">
+            <strong>Comentários:</strong>
+            <ul class="lista-comentarios">${listaComentariosHTML}</ul>
+            <form class="form-comentario" onsubmit="adicionarComentario(event, ${post.id}, ${JSON.stringify(post.comentarios || []).replace(/"/g, '&quot;')})">
+              <input type="text" placeholder="Comentar..." required />
+              <button type="submit">Enviar</button>
+            </form>
+          </div>
+        `;
+
+        feedEl.appendChild(card);
+      });
+    }
+
+    async function curtirPost(id, likesAtuais) {
+      const curtidasLocais = getCurtidasLocais();
+      if (curtidasLocais.includes(id)) return;
+
+      const { error } = await supabaseClient
+        .from("postagens")
+        .update({ likes: likesAtuais + 1 })
+        .eq("id", id);
+
+      if (!error) {
+        salvarCurtidaLocal(id);
+        carregarPostagens();
+      }
+    }
+
+    async function adicionarComentario(event, id, comentariosAtuais) {
+      event.preventDefault();
+      const input = event.target.querySelector("input");
+      const novoComentario = input.value.trim();
+
+      if (!novoComentario) return;
+
+      const { error } = await supabaseClient
+        .from("postagens")
+        .update({ comentarios: [...comentariosAtuais, novoComentario] })
+        .eq("id", id);
+
+      if (!error) carregarPostagens();
+    }
+
+    carregarPostagens();
+  </script>
+</body>
+</html>
