@@ -1,1 +1,2 @@
-# att-aula-15-09
+# rededorafa
+Rede social conceitual e disruptiva
